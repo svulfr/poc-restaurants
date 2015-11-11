@@ -143,64 +143,8 @@
         <directory>target</directory>
         <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
-            <resource>
-                <directory>${project.basedir}/src/main/js</directory>
-                <targetPath>../generated/js/site</targetPath>
-            </resource>
-            <resource>
-                <directory>${project.basedir}/../../ux-core-js/src/main/js</directory>
-                <targetPath>../generated/js/core</targetPath>
-            </resource>
-            <resource>
-                <directory>${project.basedir}/target/generated/css</directory>
-                <targetPath>../generated/css</targetPath>
-            </resource>
-            <resource>
-                <directory>${project.basedir}/../src/main/webapp</directory>
-                <targetPath>../external-web/templates/all</targetPath>
-            </resource>
         </resources>
         <plugins>
-            <!-- aggregate Javascript -->
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>yuicompressor-maven-plugin</artifactId>
-                <version>1.5.1</version>
-                <executions>
-                    <!-- aggregate javascript files -->
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>compress</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <outputDirectory>${basedir}/target/compressed/t</outputDirectory>
-                    <jswarn>false</jswarn>
-                    <nosuffix>false</nosuffix>
-                    <gzip>true</gzip>
-                    <aggregations>
-                        <aggregation>
-                            <insertNewLine>true</insertNewLine>
-                            <output>${project.build.directory}/compressed/generated/js/code.js</output>
-                            <includes>
-                                <include>core/**/*.js</include>
-                                <include>site/lib/**/*.js</include>
-                                <include>site/*.js</include>
-                            </includes>
-                        </aggregation>
-                        <aggregation>
-                            <insertNewLine>true</insertNewLine>
-                            <output>${project.build.directory}/compressed/generated/js/code_ru.js</output>
-                            <includes>
-                                <include>code.js</include>
-                                <include>site/ru/*.js</include>
-                            </includes>
-                        </aggregation>
-                    </aggregations>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
@@ -209,18 +153,8 @@
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
-                    <warName>phshare-contest</warName>
+                    <warName>poc-rst</warName>
                     <webResources>
-                        <resource>
-                            <directory>${basedir}/target/compressed/generated</directory>
-                            <includes>
-                                <include>**/code*.js*</include>
-                                <include>**/screen*.css*</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <directory>${basedir}/target/external-web</directory>
-                        </resource>
                     </webResources>
                 </configuration>
             </plugin>

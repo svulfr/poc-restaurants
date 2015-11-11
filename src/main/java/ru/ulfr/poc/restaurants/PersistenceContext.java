@@ -45,7 +45,7 @@ public class PersistenceContext {
 
         Properties jpaProperties = new Properties();
         jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.MySQLInnoDBDialect");
-        jpaProperties.put("hibernate.show_sql", "true");
+        jpaProperties.put("hibernate.show_sql", "false");
         jpaProperties.put("hibernate.format_sql", "true");
 
         entityManagerFactoryBean.setJpaProperties(jpaProperties);
