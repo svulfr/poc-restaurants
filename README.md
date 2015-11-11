@@ -19,21 +19,10 @@ System uses current versions of:
 * Maven as build system
 * developed/tested under Apache Tomcat
 * live demo (http://poc-rst.ulfr.ru) is running WildFly 9 (undertow servlet container)
- 
-Live demo login names:
-
-* admin: a@a/test
-* user 1: u1@a/test
-* user 2: u2@a/test
-
-Though "without frontend" is stated, three pages are provided to simplify multirole testing:
-
-* index page with sample of data extraction
-* login page allowing to login as either admin or user (this can be reached without by sending simple POST request)
-* admin page allowing to flush db and put test data into it
 
 Password stored as MD5 hashes for simplicity. Production system normally needs "salted" hashes.
 
+Database rollout script is snapshot.sql. Structure and tables are commented.
 
 ### Main considerations
 
@@ -52,6 +41,29 @@ CRUD/HTTP mapping general approach is used when defining API:
 * UPDATE = PUT (account password change)
 * DELETE = DELETE (not used)
 
+REST API error reporting is focused to return errors in terms of HTTP errors, without substituting web pages.
+Thus access rights checking is done via custom assertion functions. Alternative would be using Spring security annotations.
+
+### Definition Extensions
+
+#### DSS-related
+
+Idea of DSS is to recommend top rated restaurant to customers. Recommendation can be either short-term (like it is defined
+in definition), but in reality we need to collect statistics for some recent period and suggest restaurants
+which had rated most. Thus, statistics are needed
+
+#### UI
+
+Though "without frontend" is stated, three pages are provided to simplify multirole testing:
+
+* index page with sample of data extraction
+* login page allowing to login as either admin or user (this can be reached without by sending simple POST request)
+
+Live demo login names:
+
+* admin: a@a/test
+* user 1: u1@a/test
+* user 2: u2@a/test
 
 ### System layers
 
@@ -74,6 +86,8 @@ respective methods of DAO. Layer is responsible for security and data wrapping
 DAO layer combines business logic elements and data access. Data access (DB) is localized there, no DB requests are 
 allowed from other components. Should business logic be improved, it should reside in DAO layer, or different layer
 should be introduced. Layer is responsible for data integrity.
+
+## Implementation
 
 ### Model
 
@@ -110,14 +124,21 @@ handling for serialization when sent to client.
 
 #### modules.restaurants.model.Vote
 
+Maps 
 Represents case of value-as-id, when we give preference to DB structure. Technically votes map account to restaurant.
+Demonstrates an approach when we have non-changeable DB and want to map it to ORM.
 
 According to ORM recommendations such table is used as key (VoteKey class).
 
 Additional field to Vote object can be added, Date, if we want to keep history of all votes. Some queries should be 
 updated as well in this case (e.g. fetching count of votes for restaurant).
 
-#### modules.restaurants.model.Account
+#### modules.restaurants.model.RestaurantRating
+
+Represents history record for restaurant rating.
+External key is defined to map restaurant-date pair as key.
+
+#### modules.account.model.Account
  
 represents user account. This object is used to determine exact user we are working with (see AbstractController) 
 
@@ -139,15 +160,28 @@ All controllers are inherited from AbstractController providing method to get cu
 
 #### RestaurantsREST
  
-REST API implementation for restaurant-related activities. JSON is used as data transfer protocol. URLs are:
+REST API implementation for restaurant-related activities. JSON is used as data transfer protocol. 
+Standard URL mapping is defined in style:
+
+/rest/restaurants/=list actions=
+/rest/restaurants/{restaurantId}/=specific restaurant actions=
+
+In particular, voting uses standard above to identify restaurant, though with service API restaurant ID
+would better be passed as request parameter.
+
+URLs are:
 
 * GET /rest/restaurants/ - list restaurants and dishes proposed today. Public.
-* POST /rest/restaurants/{restaurantId}/dish - defines new dish, data is passed as JSON in request body. Admins only.
+* POST /rest/restaurants/{restaurantId}/dish - defines new dish, data is passed as JSON in request body (e.g. {"name": "DISHHHHH", "price": "25.80"}). Request encoding must be set to "application/json". Admins only.
 * GET /rest/restaurants/{restaurantId}/vote - votes for specific restaurant. User only.                              
 
 Technical methods:
 
 * /rest/restaurants/init - truncates tables and inserts test data for dishes
+
+#### SystemREST
+
+
 
 #### AccountREST
 

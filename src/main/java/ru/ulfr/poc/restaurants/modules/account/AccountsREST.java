@@ -1,7 +1,6 @@
 package ru.ulfr.poc.restaurants.modules.account;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -10,6 +9,7 @@ import ru.ulfr.poc.restaurants.modules.account.dao.AccountDao;
 import ru.ulfr.poc.restaurants.modules.account.model.Account;
 import ru.ulfr.poc.restaurants.modules.core.AbstractController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
@@ -35,8 +35,8 @@ public class AccountsREST extends AbstractController {
      * @return list of {@link Account} objects
      */
     @RequestMapping(path = "/", method = RequestMethod.GET)
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public List<Account> listAccounts() {
+    public List<Account> listAccounts(HttpServletRequest request) {
+        assertPrivileges(request, "ROLE_ADMIN");
         return accountDao.list();
     }
 
@@ -47,8 +47,9 @@ public class AccountsREST extends AbstractController {
      * @return true
      */
     @RequestMapping(path = "/password", method = RequestMethod.PUT)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public Account updatePassword(@RequestBody Account account) {
+    public Account updatePassword(@RequestBody Account account,
+                                  HttpServletRequest request) {
+        assertPrivileges(request, "ROLE_USER");
         Account caller = getSessionUser();
         caller.setPassword(account.getPassword());
         return accountDao.updateAccount(caller);

@@ -1,6 +1,8 @@
 package ru.ulfr.poc.restaurants.modules.restaurants.model;
 
 
+import org.hibernate.annotations.DynamicUpdate;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -18,6 +20,7 @@ import java.util.Date;
 @SuppressWarnings("unused")
 @Entity
 @Table(name = "dishes")
+@DynamicUpdate
 public class Dish implements Serializable {
     @Id
     @Column(name = "id")

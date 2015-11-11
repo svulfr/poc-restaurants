@@ -3,15 +3,19 @@ package ru.ulfr.poc.restaurants.modules.restaurants.dao;
 //import org.hibernate.Filter;
 //import org.hibernate.Session;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ulfr.poc.restaurants.modules.core.AbstractDao;
+import ru.ulfr.poc.restaurants.modules.core.HTTP422Exception;
+import ru.ulfr.poc.restaurants.modules.core.HTTP500Exception;
 import ru.ulfr.poc.restaurants.modules.restaurants.model.Dish;
 import ru.ulfr.poc.restaurants.modules.restaurants.model.Restaurant;
+import ru.ulfr.poc.restaurants.modules.restaurants.model.RestaurantRating;
 import ru.ulfr.poc.restaurants.modules.restaurants.model.Vote;
-import ru.ulfr.poc.restaurants.modules.restaurants.model.VoteKey;
 
+import javax.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
@@ -79,7 +83,11 @@ public class RestaurantsDaoImpl extends AbstractDao implements RestaurantsDao {
     @Override
     @Transactional
     public void insertDish(Dish dish) {
-        em.persist(dish);
+        try {
+            em.persist(dish);
+        } catch (Throwable x) {
+            throw translateException(x, "unable to add dish:");
+        }
     }
 
     /**
@@ -94,21 +102,27 @@ public class RestaurantsDaoImpl extends AbstractDao implements RestaurantsDao {
     @Override
     @Transactional
     public boolean vote(int restaurantId, int accountId) {
-        Vote vote = em.find(Vote.class, new VoteKey(restaurantId, accountId));
-        if (vote == null) {
-            // new vote, persist
-            vote = new Vote();
-            vote.setVote(new VoteKey(restaurantId, accountId));
-            em.persist(vote);
-        } else {
-            // existing vote, check time and update if needed
-            Calendar calendar = Calendar.getInstance();
-            if (calendar.get(Calendar.HOUR) >= 11) {
-                return false;
+        try {
+            // find votes by user. Use query as votes table contains max 1 vote.
+            List<Vote> votes = em.createQuery("from Vote v where v.accountId = ?1", Vote.class)
+                    .setParameter(1, accountId)
+                    .getResultList();
+            if (votes.size() == 0) {
+                // use didn't vote so far
+                Vote vote = new Vote(accountId, restaurantId);
+                em.persist(vote);
+            } else {
+                // user already voted, check time and update if needed
+                Calendar calendar = Calendar.getInstance();
+                if (calendar.get(Calendar.HOUR_OF_DAY) >= 11) {
+                    return false;
+                }
+                votes.get(0).setRestaurantId(restaurantId);
             }
-            vote.getVote().setRestaurantId(restaurantId);
+            return true;
+        } catch (Throwable x) {
+            throw translateException(x, "unable to vote for restaurant:");
         }
-        return true;
     }
 
     /**
@@ -117,17 +131,36 @@ public class RestaurantsDaoImpl extends AbstractDao implements RestaurantsDao {
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void cleanupMenu() {
+        // fetch votes registered during last day
+        List<Vote> votes = em.createQuery("from Vote ", Vote.class).getResultList();
+
+        // arrange votes, map restaurant to number of votes, when they are
+        Map<Integer, Integer> restaurantVotes = new HashMap<>();
+        votes.forEach(v -> restaurantVotes.compute(v.getRestaurantId(),
+                (r, c) -> c == null ? 1 : c + 1));
+
+        // it is assumed that we run next day, so
+        Calendar yesterday = GregorianCalendar.getInstance();
+        yesterday.add(Calendar.DAY_OF_MONTH, -1);
+
+        // insert results into rating table
+        restaurantVotes.forEach((r, c) -> em.persist(new RestaurantRating(r, yesterday.getTime(), ((double) c) / votes.size())));
+
+        // truncate votes table, as we don't keep votes
         em.createNativeQuery("TRUNCATE TABLE votes").executeUpdate();
     }
 
-
     /**
-     * Method is used to create bunch of test dishes for 3 days from today on.
+     * Method is used to create bunch of test data. Production
      */
     @Override
     @Transactional
     public void generateTestData() {
         List rawList = em.createNativeQuery("SELECT id FROM restaurants").getResultList();
+
+        // cleanup, then generate dishes
+        em.createNativeQuery("TRUNCATE TABLE dishes")
+                .executeUpdate();
         int seed = 1000;
         for (int d = 0; d < 3; d++) {
             Date today = new Date(System.currentTimeMillis() + d * 24 * 60 * 60 * 1000);
@@ -143,6 +176,30 @@ public class RestaurantsDaoImpl extends AbstractDao implements RestaurantsDao {
                 }
             }
         }
+
+        // cleanup votes
+        em.createNativeQuery("TRUNCATE TABLE votes")
+                .executeUpdate();
+
+        // cleanup, then generate history
+        em.createNativeQuery("TRUNCATE TABLE restaurants_rating");
+        for (int d = 1; d < 10; d++) {
+            Date today = new Date(System.currentTimeMillis() - d * 24 * 60 * 60 * 1000);
+            for (Object rId : rawList) {
+                RestaurantRating rating = new RestaurantRating((Integer) rId, today, Math.random() / rawList.size());
+                em.persist(rating);
+            }
+        }
     }
 
+    private RuntimeException translateException(Throwable x, String message) {
+        if (x instanceof PersistenceException && x.getCause() instanceof ConstraintViolationException) {
+            logger.warn(message + x.getCause().toString());
+            return new HTTP422Exception(x.getCause().toString());
+        } else {
+            logger.warn(message + x.toString());
+            return new HTTP500Exception();
+        }
+
+    }
 }

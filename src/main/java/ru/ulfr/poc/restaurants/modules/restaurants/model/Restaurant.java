@@ -16,7 +16,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 @Entity
 @Table(name = "restaurants")
-@DynamicUpdate // use
+@DynamicUpdate
 // Hibernate implementation would use this filter to automatically fetch disheson specified day
 //
 //@FilterDef(name = "dishDate", parameters = {
@@ -59,6 +59,14 @@ public class Restaurant implements Serializable {
     @Formula("(SELECT COUNT(*) FROM votes v WHERE v.restaurant = id)")
     private int votes;
 
+    /**
+     * Rating field, collects sum or average ratings of the restaurant for last week.
+     * Will be set to null when no positive ratings are registered for the restaurant
+     */
+    // language=MySQL
+    @Formula("(SELECT SUM(r.rating) FROM restaurants_rating r WHERE r.restaurant = id AND DATEDIFF(CURRENT_DATE, r.rep_date) < 7)")
+    private Double rating;
+
     public int getId() {
         return id;
     }
@@ -87,7 +95,7 @@ public class Restaurant implements Serializable {
         return votes;
     }
 
-    public void setVotes(int votes) {
-        this.votes = votes;
+    public Double getRating() {
+        return rating;
     }
 }

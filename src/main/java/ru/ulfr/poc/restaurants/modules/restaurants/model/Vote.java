@@ -1,27 +1,48 @@
 package ru.ulfr.poc.restaurants.modules.restaurants.model;
 
+import org.hibernate.annotations.DynamicUpdate;
+
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
  * Represents vote.
- * <p>
- * {@link VoteKey} object is used as key for the object, combining account to restaurant mapping.
- * <p>
  * Can have vote time (if needed).
  */
 @Entity
 @Table(name = "votes")
+@DynamicUpdate
 public class Vote {
     @Id
-    private VoteKey vote;
+    @Column(name = "account")
+    private int accountId;
 
-    public VoteKey getVote() {
-        return vote;
+    @Column(name = "restaurant")
+    private int restaurantId;
+
+    public Vote() {
     }
 
-    public void setVote(VoteKey vote) {
-        this.vote = vote;
+    public Vote(int accountId, int restaurantId) {
+        this.accountId = accountId;
+        this.restaurantId = restaurantId;
+    }
+
+    public int getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(int accountId) {
+        this.accountId = accountId;
+    }
+
+    public int getRestaurantId() {
+        return restaurantId;
+    }
+
+    public void setRestaurantId(int restaurantId) {
+        this.restaurantId = restaurantId;
     }
 }

@@ -31,6 +31,17 @@ CREATE TABLE restaurants (
   ENGINE InnoDB
   DEFAULT CHARSET utf8;
 
+CREATE TABLE restaurants_rating (
+  restaurant INT  NOT NULL,
+  rep_date   DATE NOT NULL,
+  rating     DOUBLE DEFAULT 0,
+  INDEX (restaurant),
+  UNIQUE KEY (restaurant, rep_date),
+  CONSTRAINT FOREIGN KEY (restaurant) REFERENCES restaurants (id)
+)
+  ENGINE InnoDB
+  DEFAULT CHARSET utf8;
+
 CREATE TABLE dishes (
   id         INT NOT NULL AUTO_INCREMENT,
   price      DECIMAL(6, 2),
@@ -47,7 +58,7 @@ CREATE TABLE dishes (
 CREATE TABLE votes (
   restaurant INT NOT NULL,
   account    INT NOT NULL,
-  UNIQUE (restaurant, account),
+  UNIQUE (account), -- allow only one vote per user per day
   CONSTRAINT FOREIGN KEY (restaurant) REFERENCES restaurants (id),
   CONSTRAINT FOREIGN KEY (account) REFERENCES accounts (id)
 )

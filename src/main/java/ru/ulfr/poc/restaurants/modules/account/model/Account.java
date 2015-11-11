@@ -2,11 +2,9 @@ package ru.ulfr.poc.restaurants.modules.account.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.DynamicUpdate;
-import org.springframework.util.DigestUtils;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -44,12 +42,17 @@ public class Account implements Serializable {
         this.login = login;
     }
 
+    /**
+     * returns password, annotation defines that password is never serialized when listing acciybt
+     *
+     * @return password
+     */
     @JsonIgnore
     public String getPassword() {
         return password;
     }
 
     public void setPassword(String password) {
-        this.password = DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8));
+        this.password = password;
     }
 }
