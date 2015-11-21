@@ -47,7 +47,6 @@ public class AccountDaoImpl extends AbstractDao implements AccountDao {
     @Override
     @Transactional
     public Account updateAccount(Account account) {
-        assert account.getId() > 0;
         Account existing = em.find(Account.class, account.getId());
         // enumerate specified fields. May be implemented as customized bean copy procedure
         if (account.getLogin() != null) {
