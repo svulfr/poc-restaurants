@@ -87,3 +87,5 @@ INSERT INTO restaurants (name) VALUES
   ('restaurant 4'),
   ('restaurant 5');
 
+GRANT ALL PRIVILEGES ON pocrest.* TO pocrest@localhost
+IDENTIFIED BY 'pocrest';
