@@ -1,8 +1,5 @@
 package ru.ulfr.poc.restaurants.modules.restaurants.dao;
 
-//import org.hibernate.Filter;
-//import org.hibernate.Session;
-
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
@@ -16,7 +13,6 @@ import ru.ulfr.poc.restaurants.modules.restaurants.model.RestaurantRating;
 import ru.ulfr.poc.restaurants.modules.restaurants.model.Vote;
 
 import javax.persistence.PersistenceException;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -148,48 +144,6 @@ public class RestaurantsDaoImpl extends AbstractDao implements RestaurantsDao {
 
         // truncate votes table, as we don't keep votes
         em.createNativeQuery("TRUNCATE TABLE votes").executeUpdate();
-    }
-
-    /**
-     * Method is used to create bunch of test data. Production
-     */
-    @Override
-    @Transactional
-    public void generateTestData() {
-        List rawList = em.createNativeQuery("SELECT id FROM restaurants").getResultList();
-
-        // cleanup, then generate dishes
-        em.createNativeQuery("TRUNCATE TABLE dishes")
-                .executeUpdate();
-        int seed = 1000;
-        for (int d = 0; d < 3; d++) {
-            Date today = new Date(System.currentTimeMillis() + d * 24 * 60 * 60 * 1000);
-            for (Object rId : rawList) {
-                int restaurantId = (Integer) rId;
-                for (int i = 0; i < 2 + Double.valueOf(Math.random() * 2.999).intValue(); i++) {
-                    Dish dish = new Dish();
-                    dish.setName("DISH SID " + seed++);
-                    dish.setPrice(BigDecimal.valueOf(10.0 + Math.random() * 10.0));
-                    dish.setRestaurantId(restaurantId);
-                    dish.setValidOn(today);
-                    em.persist(dish);
-                }
-            }
-        }
-
-        // cleanup votes
-        em.createNativeQuery("TRUNCATE TABLE votes")
-                .executeUpdate();
-
-        // cleanup, then generate history
-        em.createNativeQuery("TRUNCATE TABLE restaurants_rating");
-        for (int d = 1; d < 10; d++) {
-            Date today = new Date(System.currentTimeMillis() - d * 24 * 60 * 60 * 1000);
-            for (Object rId : rawList) {
-                RestaurantRating rating = new RestaurantRating((Integer) rId, today, Math.random() / rawList.size());
-                em.persist(rating);
-            }
-        }
     }
 
     private RuntimeException translateException(Throwable x, String message) {

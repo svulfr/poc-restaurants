@@ -12,7 +12,7 @@ import javax.sql.DataSource;
  * Root implementation for DAO. Provides DataSource and EntityManager
  */
 @SuppressWarnings("unused")
-public class AbstractDao {
+public abstract class AbstractDao {
     /**
      * logger
      */

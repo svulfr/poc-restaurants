@@ -18,7 +18,4 @@ public interface RestaurantsDao {
 
     @Transactional
     boolean vote(int restaurantId, int accountId);
-
-    @Transactional
-    void generateTestData();
 }
