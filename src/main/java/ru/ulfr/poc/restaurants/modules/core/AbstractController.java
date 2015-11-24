@@ -3,6 +3,8 @@ package ru.ulfr.poc.restaurants.modules.core;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 import ru.ulfr.poc.restaurants.modules.account.dao.AccountDao;
 import ru.ulfr.poc.restaurants.modules.account.model.Account;
 
@@ -17,15 +19,22 @@ public class AbstractController {
     AccountDao accountDao;
 
     /**
-     * Retuns current session user based on SecurityContext.
+     * Returns current session user based on SecurityContext.
      *
-     * @return {@link Account} object of current user or null
+     * @return {@link User} object of current user or null
      */
     protected Account getSessionUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof User) {
+        if (principal instanceof org.springframework.security.core.userdetails.User) {
             User user = (User) principal;
-            return accountDao.getAccountByLogin(user.getUsername());
+
+            RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+            Object systemUser = attributes.getAttribute("currentUser", RequestAttributes.SCOPE_SESSION);
+            if (systemUser == null || !(systemUser instanceof Account)) {
+                systemUser = accountDao.getAccountByLogin(user.getUsername());
+                attributes.setAttribute("currentUser", systemUser, RequestAttributes.SCOPE_SESSION);
+            }
+            return (Account) systemUser;
         } else {
             return null;
         }
