@@ -124,6 +124,7 @@ public class RestaurantsDaoImpl extends AbstractDao implements RestaurantsDao {
     /**
      * Wipes user votes at 00:00 each day
      */
+    @Override
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void cleanupMenu() {
